@@ -1,0 +1,17 @@
+CREATE DATABASE kpiscope;
+GO
+
+USE kpiscope;
+GO
+
+CREATE SCHEMA raw;
+GO
+
+CREATE SCHEMA staging;
+GO
+
+CREATE SCHEMA clean;
+GO
+
+CREATE SCHEMA mart;
+GO
