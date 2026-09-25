@@ -1,0 +1,17 @@
+.venv/
+env/
+venv/
+__pycache__/
+*.pyc
+
+# Local Data (byte-for-byte Kaggle sources stay local)
+data/raw/*.csv
+data/processed/*.parquet
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Power BI temp files & credentials
+*.pbix.temp
+powerbi/*.credentials*
+.env
