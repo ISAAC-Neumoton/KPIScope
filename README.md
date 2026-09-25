@@ -1,10 +1,13 @@
 # KPIScope — Executive KPI Scorecard
 ### End-to-End Agile Project Guide: SQL Server (Injection → Cleaning → Transformation → Modeling) → Python & Power BI (Calculation + Visualization)
 
-**Author:** Isaac Umoh
+
 **Dataset:** SaaS Subscription & Churn Analytics Dataset (Kaggle — 5 files, ~50 columns)
+
 **Database Engine:** Microsoft SQL Server, managed via SSMS
+
 **Architecture:** One shared SQL Server pipeline (injection → cleaning → transformation → modeling) feeding TWO independent, parallel visualization tracks — Python and Power BI — both connecting read-only to the same finished tables and doing ONLY calculations + visuals.
+
 **Methodology:** Agile (sprints, backlog, Definition of Done, sprint review)
 
 ---
