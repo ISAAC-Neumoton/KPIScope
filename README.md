@@ -1,10 +1,110 @@
-﻿# KPIScope — Executive KPI Scorecard
-### End-to-End Agile Project Guide: SQL Server (Injection → Cleaning → Transformation → Modeling) → Python & Power BI (Calculation + Visualization)
+﻿# KPIScope
 
+A project that pulls a company's customer/subscription/support data into one place, so a data team can dig into it in Python and leadership can check a Power BI scorecard every week — both looking at the exact same numbers.
 
-**Dataset:** SaaS Subscription & Churn Analytics Dataset 
+This README explains **what problem this solves** and **what all the business terms mean**, written for someone with little business background. If a word feels obvious to you already, skip it — this is meant to be a lookup, not a lecture.
 
-**Database Engine:** Microsoft SQL Server, managed via SSMS
+---
+
+## 1. What problem is this actually solving?
+
+Picture a company where:
+- The Sales team has their own spreadsheet of "new customers this month."
+- The Customer Success team has their own list of "customers we lost."
+- Finance manually adds up subscription revenue by hand at the end of each month.
+
+None of these three numbers agree with each other, because each team built their own version from their own partial data. Nobody can say for sure "how much money are we making" or "are we gaining or losing customers faster" — and by the time someone finally notices a problem (like a wave of customers cancelling), months have already gone by.
+
+**KPIScope's fix:** combine every relevant piece of data — accounts, subscriptions, feature usage, support tickets, churn events — into one clean, single source, so every team is reading from the same numbers instead of five different spreadsheets that disagree.
+
+---
+
+## 2. Business jargon, explained
+
+### MRR — Monthly Recurring Revenue
+The amount of money the company earns *every month* from subscriptions. If a customer pays $100/month, they contribute $100 to MRR. This is the core "how much money is coming in right now, on a recurring basis" number.
+
+### ARR — Annual Recurring Revenue
+The same idea as MRR, just scaled up to a yearly view. Usually just `MRR × 12`. Companies use ARR when talking about big-picture, year-level revenue instead of month-to-month.
+
+### Churn / Churn Rate
+"Churn" = a customer cancels or leaves. "Churn rate" = what percentage of customers left in a given period. If you had 100 customers and 5 cancelled this month, that's a 5% churn rate. High churn = the business is leaking customers.
+
+### Expansion (MRR)
+When an *existing* customer pays the company **more** money than before — e.g., they upgrade to a bigger plan, add more seats/users, or buy an add-on. This grows revenue without needing a single new customer.
+
+### Contraction (MRR)
+The opposite of expansion — an existing customer downgrades or removes something, so the company earns **less** from them than before (but they haven't fully cancelled yet).
+
+### Net Revenue Retention (NRR)
+A single number that answers: "If we got zero new customers this year, would our revenue from existing customers alone have grown or shrunk?" It's calculated as:
+
+```
+(Starting MRR − Revenue lost to churn + Revenue gained from expansion) ÷ Starting MRR
+```
+
+- **Above 100%** = existing customers are spending *more* over time, even accounting for the ones who left. This is considered a very healthy sign for a subscription business.
+- **Below 100%** = the business is shrinking from within, even if it's still adding new customers on top.
+
+### Acquisition Channel
+*How* a customer found and joined the company — e.g., through a Google ad, a referral from another customer, a sales cold-call, a free-trial signup, etc. Businesses track this to figure out which marketing/sales channel brings in customers who actually stick around, versus ones who sign up once and leave quickly.
+
+### Plan Tier
+The subscription "level" a customer is on — e.g., Basic, Pro, Enterprise. Usually tied directly to price and feature access.
+
+### Seats
+How many individual users a company's account is paying for (like "we bought 20 seats" for 20 employees to use the product).
+
+### CSAT / Satisfaction Score
+A rating a customer gives after a support interaction — usually something like 1–5 stars — showing how happy they were with the help they got.
+
+### SLA-style metrics (Resolution Time, First Response Time)
+How long it took a support ticket to get a first reply, and how long it took to fully resolve. Slow support is often an early warning sign that a customer might leave.
+
+### Escalation
+When a support ticket gets kicked up to a more senior or specialized team because the first person couldn't resolve it — usually a sign of a more serious or frustrating issue.
+
+---
+
+## 3. Data/technical jargon, explained
+
+### Table / Row / Column
+Think of each data file (accounts, subscriptions, etc.) as a spreadsheet. A **row** is one single record (e.g., one subscription). A **column** is one type of information about every record (e.g., "start date").
+
+### Grain
+"What does one row actually represent?" For example, in the `subscriptions` table, one row = one subscription (not one customer — a customer can have several subscriptions). Getting the grain wrong is one of the most common ways people miscalculate KPIs by accident (e.g., accidentally counting a customer twice).
+
+### Primary Key
+The column that makes every row in a table unique — like an ID number. No two rows should ever share the same primary key.
+
+### Join / Join Key
+"Joining" means connecting two tables together using a shared column, so you can pull information from both at once. For example, `subscriptions` and `support_tickets` don't share direct info, but both have `account_id` — so you can join them on that column to ask "which support tickets belong to which subscriptions."
+
+### dtype (Data Type)
+What *kind* of value a column holds — a number, text, a date, true/false, etc. Data often comes in as the wrong type (e.g., a date stored as plain text) and has to be "converted" before it can be used properly — that's what "transformations" below refers to.
+
+### Null / Missing Value
+An empty cell — no data recorded for that row/column. E.g., not every support ticket has a satisfaction score, because not every customer bothers to rate their experience.
+
+### Flag
+A column that's just `True`/`False` (yes/no) — e.g., `churn_flag = True` means "this subscription has churned."
+
+### Proxy
+A stand-in measurement used when the *exact* thing you want to measure isn't directly available in the data, but something closely related is. Proxies are useful but imperfect — they should always be labeled as estimates, not treated as the real number.
+
+---
+
+## 4. What we've found so far (in plain terms)
+
+- The data is spread across 5 files that connect to each other, mainly through an account ID — like a customer number that appears in multiple files so we can link "this customer's support tickets" to "this customer's subscription."
+- Some KPIs from the original wish-list — like MRR/ARR trend, churn rate, and using support tickets to predict churn — are directly buildable with the data we have.
+- A few KPIs — specifically **Expansion MRR, Contraction MRR, and Net Revenue Retention** — turned out to be harder than expected. We dug in and confirmed the data doesn't cleanly track "how much a customer's payment changed over time" — it only shows separate line items per account, not a before-and-after history. We can build an approximate version, but it should be clearly labeled as an estimate, not an exact figure.
+- Whether we can measure "which acquisition channel brings in customers who stick around" still depends on a file (`account`) we haven't fully looked at yet — it may or may not even have that information in it.
+
+Full technical detail on all of this lives in `Data_Dictionary.md` in this repo.
+
+---
+
 
 **Architecture:** One shared SQL Server pipeline (injection → cleaning → transformation → modeling) feeding TWO independent, parallel visualization tracks — Python and Power BI — both connecting read-only to the same finished tables and doing ONLY calculations + visuals.
 
