@@ -94,16 +94,6 @@ A stand-in measurement used when the *exact* thing you want to measure isn't dir
 
 ---
 
-## 4. What we've found so far (in plain terms)
-
-- The data is spread across 5 files that connect to each other, mainly through an account ID — like a customer number that appears in multiple files so we can link "this customer's support tickets" to "this customer's subscription."
-- Some KPIs from the original wish-list — like MRR/ARR trend, churn rate, and using support tickets to predict churn — are directly buildable with the data we have.
-- A few KPIs — specifically **Expansion MRR, Contraction MRR, and Net Revenue Retention** — turned out to be harder than expected. We dug in and confirmed the data doesn't cleanly track "how much a customer's payment changed over time" — it only shows separate line items per account, not a before-and-after history. We can build an approximate version, but it should be clearly labeled as an estimate, not an exact figure.
-- Whether we can measure "which acquisition channel brings in customers who stick around" still depends on a file (`account`) we haven't fully looked at yet — it may or may not even have that information in it.
-
-Full technical detail on all of this lives in `Data_Dictionary.md` in this repo.
-
----
 
 
 **Architecture:** One shared SQL Server pipeline (injection → cleaning → transformation → modeling) feeding TWO independent, parallel visualization tracks — Python and Power BI — both connecting read-only to the same finished tables and doing ONLY calculations + visuals.
